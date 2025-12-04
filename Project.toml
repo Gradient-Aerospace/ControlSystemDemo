@@ -1,0 +1,16 @@
+[deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+Dimensions = "5f902022-033a-44bd-a904-0a49265d4d22"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+HDF5Vectors = "7098961b-d60d-42aa-8832-e11a9f96377b"
+OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+PortableStructs = "b33d0e21-58ed-44e8-a1cd-54bcd6317649"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SystemsOfSystems = "444f41de-88f0-45df-a3dd-0849e84f1dfe"
+
+[sources]
+Dimensions = {url = "https://github.com/Gradient-Aerospace/Dimensions.jl"}
+HDF5Vectors = {url = "https://github.com/Gradient-Aerospace/HDF5Vectors.jl"}
+PortableStructs = {url = "https://github.com/Gradient-Aerospace/PortableStructs.jl"}
+SystemsOfSystems = {url = "https://github.com/Gradient-Aerospace/SystemsOfSystems.jl"}

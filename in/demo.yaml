@@ -1,0 +1,41 @@
+time: [0., 10.]
+options:
+  type: SimOptions
+  log:
+    type: Logs.HDF5LogOptions
+    filename: "out/history.h5"
+  solver:
+    type: Solvers.DormandPrince54Options
+  monitors:
+    - type: Monitors.ProgressBarOptions
+  time_dimension:
+    type: Dimension
+    label: Time
+    units: s
+system:
+  type: ClosedLoopSystemSpecs
+  plant:
+    type: PlantSpecs
+    mass: 1.0
+    initial_position: 0.0
+    initial_velocity: 0.0
+  sensor:
+    type: SensorSpecs
+    dt: 0.1
+    sigma_noise: 0.0
+    sigma_bias: 0.0
+  target:
+    type: ConstantTargetSpecs
+    constant_position: 1.0
+  controller:
+    type: PDControllerSpecs
+    dt: 0.1
+    p: 8.0
+    d: 4.0
+    initial_position: 0.0
+    initial_command: 0.0
+  actuator:
+    type: ActuatorSpecs
+    time_constant: 0.2
+    initial_command: 0.0
+    initial_response: 0.0
