@@ -12,7 +12,7 @@ Clone this repo somewhere on your system. Navigate to that location in the conso
 julia setup.jl
 ```
 
-This make take a few minutes to compile a bunch of stuff.
+This may take a few minutes to compile a bunch of stuff.
 
 Note that this setup doesn't change anything on your system; it only applies to this directory.
 
@@ -24,7 +24,7 @@ The sim can run two different ways. We'll start with the command-line version. R
 julia --project=. demo-shell.jl --input in/demo.yaml --output out/
 ```
 
-The `out` directory will now have plots and an HDF5 file. You could open that HDF5 file in MATLAB/Python and look around if you like. Here are some example arrays in that HDF5 file:
+The `out` directory will now have plots and an HDF5 file. You could open that HDF5 file in many major languages (Python, MATLAB, C++) and look around if you like. Below are some example arrays in that HDF5 file.
 
 Here was a top-level continuous-time output:
 
@@ -44,7 +44,7 @@ Here's the plant's continuous-time position:
 /models/plant/timeseries/position/units
 ```
 
-The sensor output its measurement (a structured type with a field for sample time, `t`, and the measurement position, `position`), resulting in:
+The sensor outputs its measurement (a structured type with a field for sample time, `t`, and the measured position, `position`), resulting in:
 
 ```
 /models/sensor/timeseries/measurement/title
@@ -56,7 +56,7 @@ The sensor output its measurement (a structured type with a field for sample tim
 
 Feel free to examine the file to see the other signals.
 
-Ok, that's it. You ran a sim. We could make all sims run like this -- an input file (or files) and a place for their outputs.
+Ok, that's it. You ran a sim. If you just want a system that can run like an executable, mapping an input file to output files, then this is all you need.
 
 ## Running the Sim in Julia
 
@@ -66,9 +66,9 @@ We can also run the sim without input files. `demo.jl` shows the code to run the
 julia --project=. -i demo.jl
 ```
 
-(The `-i` argument here means "run in interactive mode". When the simulation is done, it will drop you off in Julia so you can examine plots, interact with things, etc. When the sim is done, you may have to switch windows to see the plots. Back in Julia, press ctrl+d to quit.)
+(The `-i` argument here means "run in interactive mode". When the simulation is done, it will drop you off in Julia so you can examine plots, interact with things, etc. When the sim is done, you may have to switch windows to see the plots. When you're done, back in Julia, press ctrl+d to quit.)
 
-All of the models used in this example are defined in `models.jl`. We'll put together a modeling tutorial soon. Even without one, it's pretty easy to see what kinds of things are going on with the models in this sim. SystemsOfSystems.jl features a concise, expressive, and very general modeling language, and we can use it to build up large-scale models with flexible levels of fidelity.
+All of the models used in this example are defined in `models.jl`. We'll put together a modeling tutorial soon. Even without one, it's pretty easy to see what kinds of things are going on with the models in this sim. SystemsOfSystems.jl features a concise, expressive, and very general modeling language, and we can use it to build up large-scale models with flexible levels of fidelity, easy configuration, and tons of outputs.
 
 ## Files in this Repo
 
