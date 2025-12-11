@@ -106,9 +106,9 @@ for (path, p) in plots
 end
 
 ## Analysis Outside Julia
-#  
+#
 # outputs.h5:
-#   
+#
 # /timeseries/control_error
 #                          /title
 #                          /time

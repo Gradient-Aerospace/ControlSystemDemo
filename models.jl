@@ -82,7 +82,7 @@ end
 # Sensor #
 ##########
 
-# This is a purely discrete model of the sensor. It measures the plant with a regular sample 
+# This is a purely discrete model of the sensor. It measures the plant with a regular sample
 # rate, adding noise to the plant's true position.
 
 @kwdef struct SensorSpecs
@@ -381,21 +381,22 @@ end
     controller
 end
 
-# This model has no state or constants of its own; it just contains other models.
+# This model has no state or constants of its own; it just contains other models and
+# connects them.
 @kwdef struct ClosedLoopSystem
-    plant
-    sensor
-    actuator
-    target
-    controller
+    plant::Plant
+    sensor::Sensor
+    actuator::Actuator
+    target::ConstantTarget
+    controller::PDController
 end
 
 # This function creates a new random number generator based on a "salt" (some random draw)
 # and a string. This is a useful modeling paradigm allowing a parent model to make new
-# RNGs for its sub-models. If they share a randomly-generated "salt" but have unique names, 
+# RNGs for its sub-models. If they share a randomly-generated "salt" but have unique names,
 # then the result is that (1) changing the top level seed will change all draws everywhere,
 # but (2) changes to any one model don't affect any other models' RNG streams. You don't
-# have to do this, but it's an excellent pattern for modeling random variables inside of 
+# have to do this, but it's an excellent pattern for modeling random variables inside of
 # systems of systems. See how we use it, below.
 child_rng(salt, name) = Xoshiro(salt + hash(name))
 
