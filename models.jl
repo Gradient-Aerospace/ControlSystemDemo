@@ -6,7 +6,7 @@ using SystemsOfSystems: ModelDescription, VariableDescription, is_regular_step_t
 # Plant #
 #########
 
-# This models a second-order continuous-time system for position and velocity. Its inputs
+# This models a second-order continuous-time system for position and velocity. Its input
 # is an external force that drives the plant model.
 
 # This is how the system is parameterized.

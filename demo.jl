@@ -53,7 +53,7 @@ history, t, system = simulate(
     options = SimOptions(;
         log = Logs.HDF5LogOptions(log_file), # Logs results to portable HDF5 file.
         monitors = [Monitors.ProgressBarOptions(),], # Show a progress bar while running.
-        time_dimension = "Time" => "hours", # Tell it that time has units of seconds here.
+        time_dimension = "Time" => "s", # Tell it that time has units of seconds here.
     ),
 )
 
