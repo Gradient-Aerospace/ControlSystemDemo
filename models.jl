@@ -1,6 +1,7 @@
-using Random: Xoshiro, randn, rand
+using Random: Xoshiro, randn
 import Dimensions
-using SystemsOfSystems: ModelDescription, VariableDescription, is_regular_step_triggering, RatesOutput, UpdatesOutput
+using SystemsOfSystems: ModelDescription, VariableDescription, RatesOutput, UpdatesOutput,
+    is_regular_step_triggering, branch
 
 #########
 # Plant #
@@ -25,7 +26,7 @@ end
 
 # This turns the specs into a description of the model. (It doesn't need the time or random-
 # number generator inputs.)
-function init(t, specs::PlantSpecs, rng)
+function init(t, specs::PlantSpecs, seed)
     return ModelDescription(;
         type = Plant, # This is what tells it to build a Plant with this stuff.
         constants = (; # Constants we'll need while running
@@ -110,7 +111,8 @@ Dimensions.dimstyle(::Type{SensorMeasurement}) = Dimensions.StructDimensionStyle
 end
 
 # Describe all of the variables in the plant model, with their initial conditions.
-function init(t, specs::SensorSpecs, rng)
+function init(t, specs::SensorSpecs, seed)
+    rng = Xoshiro(seed)
     return ModelDescription(;
         type = Sensor,
         constants = (;
@@ -127,19 +129,20 @@ function init(t, specs::SensorSpecs, rng)
         ),
         discrete_random_variables = (;
             noise = VariableDescription(
-                (t) -> specs.sigma_noise * randn(rng); # This builds a closure around whatever it needs.
+                (rng, t) -> specs.sigma_noise * randn(rng);
                 title = "Measurement White Noise",
                 dimensions = ["noise" => "m",],
             ),
         ),
         discrete_states = (;
             measurement = VariableDescription(
-                SensorMeasurement(0., 0.); # TODO: Make this missing?
+                SensorMeasurement(0., 0.); # This is a state, so it has to start somewhere.
                 title = "Sensor Measurement",
                 dimensions = ["time" => "s", "position" => "m",],
             )
         ),
         t_next = t + specs.dt, # Our next step comes from our regular sample period.
+        rng, # Store this random number generator (optional).
     )
 end
 
@@ -182,7 +185,7 @@ end
     constant_position::Float64
 end
 
-function init(t, specs::ConstantTargetSpecs, rng)
+function init(t, specs::ConstantTargetSpecs, seed)
     return ModelDescription(;
         type = ConstantTarget,
         constants = (;
@@ -237,7 +240,7 @@ end
     command::Float64
 end
 
-function init(t, specs::PDControllerSpecs, rng)
+function init(t, specs::PDControllerSpecs, seed)
     return ModelDescription(;
         type = PDController,
         constants =  (;
@@ -317,7 +320,7 @@ end
     response::Float64
 end
 
-function init(t, specs::ActuatorSpecs, rng)
+function init(t, specs::ActuatorSpecs, seed)
     return ModelDescription(;
         type = Actuator,
         constants = (;
@@ -391,42 +394,27 @@ end
     controller::PDController
 end
 
-# This function creates a new random number generator based on a "salt" (some random draw)
-# and a string. This is a useful modeling paradigm allowing a parent model to make new
-# RNGs for its sub-models. If they share a randomly-generated "salt" but have unique names,
-# then the result is that (1) changing the top level seed will change all draws everywhere,
-# but (2) changes to any one model don't affect any other models' RNG streams. You don't
-# have to do this, but it's an excellent pattern for modeling random variables inside of
-# systems of systems. See how we use it, below.
-child_rng(salt, name) = Xoshiro(salt + hash(name))
-
 # The ClosedLoopSystem model's initialization just initializes all of the sub-models and
-# gives each one a unique random number generator. It also describes one top-level output
-# signal we want.
-function init(t, specs::ClosedLoopSystemSpecs, rng)
-
-    # Make a random draw we'll share in generating the sub-model RNGs.
-    salt = rand(rng, Int64)
-
-    # Initialize each submodel, as well as this model's own outputs.
+# describes one top-level output signal we want. It "branches" the seed for for each
+# sub-model so that each sub-model has its own random number stream during initialiation.
+function init(t, specs::ClosedLoopSystemSpecs, seed)
     return ModelDescription(;
         type = ClosedLoopSystem,
         models = (;
-            plant = init(t, specs.plant, child_rng(salt, "plant")),
-            sensor = init(t, specs.sensor, child_rng(salt, "sensor")),
-            target = init(t, specs.target, child_rng(salt, "target")),
-            controller = init(t, specs.controller, child_rng(salt, "controller")),
-            actuator = init(t, specs.actuator, child_rng(salt, "actuator")),
+            plant = init(t, specs.plant, branch(seed, "plant")),
+            sensor = init(t, specs.sensor, branch(seed, "sensor")),
+            target = init(t, specs.target, branch(seed, "target")),
+            controller = init(t, specs.controller, branch(seed, "controller")),
+            actuator = init(t, specs.actuator, branch(seed, "actuator")),
         ),
         discrete_outputs = (;
-            control_error = VariableDescription{Union{Missing, Float64}}(
-                0.; # TODO: Make this missing?
+            control_error = VariableDescription{Float64}(
+                missing; # We don't have this yet, but when we do, it will be a Float64.
                 title = "Control Error (Target - True Position)",
                 dimensions = ["error" => "m",],
             ),
         ),
     )
-
 end
 
 # While this model has no continuous-time dynamics, it's responsible for routing things to
