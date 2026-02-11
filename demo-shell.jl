@@ -1,6 +1,7 @@
 # Include the stuff we'll need.
 import HDF5Vectors # Allows us to use the HDF5-based log.
-using SystemsOfSystems: simulate, SimOptions, Logs, Solvers, Monitors, plot_ts, gather_all_time_series
+using SystemsOfSystems: simulate, SimOptions, Logs, Solvers, Monitors, Dimension,
+    plot_ts, gather_all_time_series
 using PortableStructs: load_from_yaml, write_to_yaml
 import GLMakie # A plotting package
 

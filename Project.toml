@@ -10,7 +10,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SystemsOfSystems = "444f41de-88f0-45df-a3dd-0849e84f1dfe"
 
 [sources]
-Dimensions = {url = "https://github.com/Gradient-Aerospace/Dimensions.jl"}
-HDF5Vectors = {url = "https://github.com/Gradient-Aerospace/HDF5Vectors.jl"}
-PortableStructs = {url = "https://github.com/Gradient-Aerospace/PortableStructs.jl"}
-SystemsOfSystems = {url = "https://github.com/Gradient-Aerospace/SystemsOfSystems.jl"}
+Dimensions = {url = "https://github.com/Gradient-Aerospace/Dimensions.jl#3005c46e6c094653fd3d7de66e4e4129c50c51d9"}
+HDF5Vectors = {url = "https://github.com/Gradient-Aerospace/HDF5Vectors.jl#1d6aa586b99339be71051ff31cb1478efd823752"}
+PortableStructs = {url = "https://github.com/Gradient-Aerospace/PortableStructs.jl#df3dba33b04a7152b4416fd1a0237ca9fb26f684"}
+SystemsOfSystems = {url = "https://github.com/Gradient-Aerospace/SystemsOfSystems.jl#1485413b0128d965a3a34b2eaae0bb39cae8eebf"}
