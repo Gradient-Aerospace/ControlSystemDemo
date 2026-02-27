@@ -1,9 +1,8 @@
 ## Imports
 import HDF5Vectors # Allows us to use the HDF5-based log.
 # using SystemsOfSystemsHDF5Logs: HDF5LogOptions, load_hdf5_log # <- An alternative to the extension approach used by the above.
-using SystemsOfSystems: simulate, SimOptions, Logs, Solvers, Monitors, TimeSeries, plot_ts,
-    load_hdf5_log, gather_all_time_series
-import GLMakie # For the plots
+using SystemsOfSystems: simulate, SimOptions, Logs, Solvers, Monitors
+# import GLMakie # For the plots
 
 ## Models
 include("models.jl")
@@ -37,123 +36,89 @@ system_specs = ClosedLoopSystemSpecs(
     ),
 )
 
+## Let's see how our own functions allocate.
+
+using SystemsOfSystems
+using Random
+
+t = 0//1
+rng = Xoshiro(1)
+md = init(t, system_specs, rng)
+ommd = SystemsOfSystems.strip_fluff_from_model_description(md)
+msd = SystemsOfSystems.draw_wd(t, ommd, ommd)
+system = SystemsOfSystems.model(msd)
+
+@show isbits(msd)
+
+rates(t, system)
+@time rates(t, system)
+
+println("updates")
+updates(t, system)
+@time updates(t, system)
+
+## Sim core functions
+
+using InteractiveUtils
+
+# SystemsOfSystems.find_soonest_t_next(1//1, msd)
+# t_array = Vector{Rational{Int64}}(undef, 1)
+# function baz!(msd, t_array)
+#     t_array[1] = SystemsOfSystems.find_soonest_t_next(1//1, msd)
+# end
+# baz!(msd, t_array)
+# @time baz!(msd, t_array)
+
+println("update")
+updates_output = updates(t, system)
+SystemsOfSystems.update(msd, updates_output)
+@time SystemsOfSystems.update(msd, updates_output)
+# @code_warntype SystemsOfSystems.update(msd, updates_output)
+
+println("propagate")
+rates_output = rates(t, system)
+SystemsOfSystems.Solvers.propagate(msd, 1//1, rates_output)
+@time SystemsOfSystems.Solvers.propagate(msd, 1//1, rates_output)
+# @code_warntype SystemsOfSystems.Solvers.propagate(msd, 1//1, rates_output)
+
+println("propagate2")
+rates_output = rates(t, system)
+SystemsOfSystems.Solvers.propagate(msd, (1//1, 1//1), (rates_output, rates_output))
+@time SystemsOfSystems.Solvers.propagate(msd, (1//1, 1//1), (rates_output, rates_output))
+
 ## Sim Run
 
 # Get a clean output directory ready.
-out_dir = "out"
+out_dir = "out-timing"
 log_file = "$out_dir/history.h5"
-if isdir(out_dir); rm(out_dir; recursive = true); end
+mkpath(out_dir)
+
+function run_sim(t_end)
+    return simulate(
+        system_specs;
+        init_fcn = init, # calls model_description = init_fcn(t, system_description, rng)
+        rates_fcn = rates, # calls rates_fcn(t, system_model)
+        updates_fcn = updates, # calls updates_fcn(t, system_model)
+        t = (0, t_end),
+        options = SimOptions(;
+            # log = Logs.HDF5LogOptions(log_file),
+            # log = nothing,
+            # solver = Solvers.RungeKutta4Options(; dt = 1//10),
+            # solver = Solvers.DormandPrince54Options(),
+            # monitors = [Monitors.ProgressBarOptions(),],
+            # time_dimension = "Time" => "hours",
+        ),
+    )
+end
 
 # Run the sim.
-history, t, system = simulate(
-    system_specs;
-    init_fcn = init, # calls model_description = init_fcn(t, system_description, rng)
-    rates_fcn = rates, # calls rates_fcn(t, system_model)
-    updates_fcn = updates, # calls updates_fcn(t, system_model)
-    t = (0, 10),
-    options = SimOptions(;
-        log = Logs.HDF5LogOptions(log_file),
-        # log = nothing,
-        # solver = Solvers.RungeKutta4Options(; dt = 1//10),
-        solver = Solvers.DormandPrince54Options(),
-        monitors = [Monitors.ProgressBarOptions(),],
-        # time_dimension = "Time" => "hours",
-    ),
-)
-# # Logs.close_log(history.log) # So we can open the file anew.
-# @time history, t, system = simulate(
-#     system_specs;
-#     init_fcn = init, # calls model_description = init_fcn(t, system_description, rng)
-#     rates_fcn = rates, # calls rates_fcn(t, system_model)
-#     updates_fcn = updates, # calls updates_fcn(t, system_model)
-#     t = (0, 1000),
-#     options = SimOptions(;
-#         # log = Logs.HDF5LogOptions(log_file),
-#         solver = Solvers.RungeKutta4Options(; dt = 1//10),
-#         # solver = Solvers.DormandPrince54Options(),
-#         monitors = [Monitors.ProgressBarOptions(),],
-#         # time_dimension = "Time" => "hours",
-#     ),
-# )
-
-if t == 0
-    exit()
-end
-
-## Analysis
-
-@show t
-display(system)
-
-display(history)
-display(history["/plant"])
-display(history["/plant"].continuous_states.position)
-display(history["/plant"]["position"])
-
-## And we can re-load it here like so:
-# log, _ = load_hdf5_log(log_file);
-
-## Plots
-
-# Make a whole catalog of plots, starting with these two custom plots.
-plots = Pair[
-    "true position vs target" => [
-        "truth" => history["/plant"]["position"],
-        "target" => history["/target"]["target"],
-    ],
-    "actuator command vs response" => [
-        "command" => history["/actuator"]["command"],
-        "response" => history["/actuator"]["response"],
-    ],
-    pairs(gather_all_time_series(history.log))...,
-]
-
-# Display and save everything.
-for (path, p) in plots
-    f = plot_ts(p)
-    display(GLMakie.Screen(), f)
-    filename = out_dir * "/" * replace(path, r":" => "/"; count = 1) * ".png"
-    mkpath(dirname(filename))
-    GLMakie.save(filename, f)
-end
-
-# Now save a single HDF5 file with alphas and the array of file names.
-
-## outputs.h5:
-#   
-# /timeseries/control_error
-#                          /title
-#                          /time
-#                          /data
-#                          /time_label
-#                          /time_units
-#                          /labels
-#                          /units
-# /models/plant/timeseries/position
-#                                  /metadata
-#                                      /title
-#                                      /labels
-#                                      /units
-#                                  /t
-#                                  /data
-# /models/plant/timeseries/forces
-#                                /metadata
-#                                    /title
-#                                    /labels
-#                                    /units
-#                                /t
-#                                /data
-# /models/actuator/timeseries/response
-#                                     /metadata
-#                                         /title
-#                                         /labels
-#                                         /units
-#                                     /t
-#                                     /data
-
-## Over in MATLAB...
-#
-# plot_ts("outputs.h5", "/plant/position")
-#
-# plot_ts("outputs.h5", "/plant/forces")
-
+# history, t, system = run_sim(10)
+history, t, system = run_sim(1)
+Logs.close_log(history.log)
+println("Timing run:")
+@time history, t, system = run_sim(1)
+Logs.close_log(history.log)
+@time history, t, system = run_sim(100)
+Logs.close_log(history.log)
+@time history, t, system = run_sim(1000)
+Logs.close_log(history.log)
