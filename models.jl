@@ -1,3 +1,22 @@
+# models.jl
+#
+# This contains the models for a typical closed-loop control system:
+#
+#   +-- ClosedLoopSystem ---------------------------------------+
+#   |                                                           |
+#   |   Target -> Controller -> Actuator -> Plant ---- truth ------>
+#   |                 ^                       |                 |
+#   |                 |                       |                 |
+#   |                 +------- Sensor --------+                 |
+#   |                                                           |
+#   +-----------------------------------------------------------+
+#
+# Each system is modeled in a self-contained way. Each model could be swapped with any other
+# model that obeys the same interface (e.g., a PID model to replace the PD model). All of
+# the sample rates and continuous-time dynamics will be handled in a flexible but
+# nonetheless consistent, physically meaningful way. All states and signals will be logged.
+
+# Imports
 using Random: Xoshiro, randn
 import Dimensions
 using SystemsOfSystems: ModelDescription, VariableDescription, RatesOutput, UpdatesOutput,
@@ -279,8 +298,8 @@ end
 function get_command(t, controller::PDController, target_position, meas)
     if is_regular_step_triggering(t, controller.dt)
         position_error = target_position - meas.position
-        velocity = (meas.position - controller.position) / controller.dt
-        command = controller.p * position_error - controller.d * velocity
+        velocity       = (meas.position - controller.position) / controller.dt
+        command        = controller.p * position_error - controller.d * velocity
         return command
     else
         return controller.command # or nothing
@@ -291,7 +310,7 @@ function updates(t, controller::PDController, meas, command)
     if is_regular_step_triggering(t, controller.dt)
         return UpdatesOutput(;
             updates = (;
-                command = command,
+                command  = command,
                 position = meas.position,
             ),
             t_next = t + controller.dt,
@@ -401,11 +420,11 @@ function init(t, specs::ClosedLoopSystemSpecs, seed)
     return ModelDescription(;
         type = ClosedLoopSystem,
         models = (;
-            plant = init(t, specs.plant, branch(seed, "plant")),
-            sensor = init(t, specs.sensor, branch(seed, "sensor")),
-            target = init(t, specs.target, branch(seed, "target")),
+            plant      = init(t, specs.plant, branch(seed, "plant")),
+            sensor     = init(t, specs.sensor, branch(seed, "sensor")),
+            target     = init(t, specs.target, branch(seed, "target")),
             controller = init(t, specs.controller, branch(seed, "controller")),
-            actuator = init(t, specs.actuator, branch(seed, "actuator")),
+            actuator   = init(t, specs.actuator, branch(seed, "actuator")),
         ),
         discrete_outputs = (;
             control_error = VariableDescription{Float64}(
@@ -427,7 +446,7 @@ function rates(t, system::ClosedLoopSystem)
     # Run the continuous-time dynamics.
     return RatesOutput(;
         models = (;
-            plant = rates(t, system.plant, actuator_force),
+            plant    = rates(t, system.plant, actuator_force),
             actuator = rates(t, system.actuator),
         ),
     )
@@ -457,10 +476,10 @@ function updates(t, system::ClosedLoopSystem)
     # updates.
     return UpdatesOutput(;
         models = (;
-            sensor = updates(t, system.sensor, meas),
-            target = updates(t, system.target, target_position),
+            sensor     = updates(t, system.sensor, meas),
+            target     = updates(t, system.target, target_position),
             controller = updates(t, system.controller, meas, command),
-            actuator = updates(t, system.actuator, command),
+            actuator   = updates(t, system.actuator, command),
         ),
         outputs = (;
             control_error,
